@@ -1,6 +1,7 @@
 pub mod atmosphere;
 pub mod common;
 pub mod gas;
+pub mod ice;
 pub mod lava;
 pub mod moon;
 pub mod rings;
