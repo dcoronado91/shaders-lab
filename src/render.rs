@@ -15,12 +15,15 @@ pub type FragmentShader = fn(&Fragment, &Uniforms) -> Option<Color>;
 pub struct Params {
     /// Fraction of the rocky planet covered by clouds, 0..1.
     pub cloud_coverage: f32,
+    /// Parallax offset on the moon's crater field.
+    pub parallax: bool,
 }
 
 impl Default for Params {
     fn default() -> Self {
         Params {
             cloud_coverage: 0.42,
+            parallax: true,
         }
     }
 }

@@ -22,6 +22,10 @@ pub const CLOUD_HEIGHT: f32 = 0.06;
 pub const CLOUD_SHADOW: f32 = 0.75;
 /// Blinn-Phong exponent of the ocean glint.
 pub const OCEAN_SHININESS: f32 = 90.0;
+/// Brightness of the city lights on the night side.
+pub const CITY_BRIGHTNESS: f32 = 1.4;
+/// Width of the day/night transition, in units of n·l.
+pub const TERMINATOR_WIDTH: f32 = 0.32;
 
 const DEEP_OCEAN: Vec3 = hex(0x08214f);
 const SHALLOW: Vec3 = hex(0x1b7aa3);
@@ -118,7 +122,7 @@ pub fn rocky(frag: &Fragment, u: &Uniforms) -> Option<Color> {
 
     // Lighting: matte Lambert ground, Blinn-Phong glint on open water.
     let ndl = s.n.dot(s.l);
-    let day = smoothstep(-0.12, 0.2, ndl);
+    let day = smoothstep(-TERMINATOR_WIDTH * 0.4, TERMINATOR_WIDTH * 0.6, ndl);
     let diffuse = n.dot(s.l).max(0.0) * (1.0 - shadow);
     let mut c = albedo * (0.006 + diffuse);
     let water = (1.0 - land) * (1.0 - ice);
@@ -132,7 +136,7 @@ pub fn rocky(frag: &Fragment, u: &Uniforms) -> Option<Color> {
         * (1.0 - ice)
         * (1.0 - desert * 0.85)
         * (1.0 - smoothstep(0.3, 0.6, alt));
-    c += CITY * (cities * (1.0 - day) * (1.0 - cloud * 0.8) * 1.4);
+    c += CITY * (cities * (1.0 - day) * (1.0 - cloud * 0.8) * CITY_BRIGHTNESS);
 
     // Clouds on top, warm-tinted near the terminator.
     let cloud_light = saturate((ndl + 0.1) / 1.1);

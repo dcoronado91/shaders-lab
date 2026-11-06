@@ -23,7 +23,8 @@ const HUD_DIM: Color = Color::new(140, 146, 165, 255);
 
 const USAGE: &str = "usage: shaders_lab [--screenshot <shot> | --record-frames <shot> <dir>]
   <shot>: estrella | rocoso | gaseoso | lava | hielo | toxico | todos
-          nubes | sombras_nubes | dia_noche | especular | bump_rocoso | bump_luna | vortice | anillos";
+          nubes | sombras_nubes | dia_noche | especular | bump_rocoso | bump_luna | vortice | anillos
+          parallax | parallax_off";
 
 enum Command {
     Window,
@@ -135,6 +136,9 @@ fn run_window(scene: &Scene, framebuffer: &mut Framebuffer) {
             state = SceneState::new(state.body);
             state.params = Params::default();
         }
+        if rl.is_key_pressed(KeyboardKey::KEY_P) {
+            state.params.parallax = !state.params.parallax;
+        }
         if rl.is_key_pressed(KeyboardKey::KEY_M) && state.body == Body::Rocky {
             state.focus_moon = !state.focus_moon;
             state.camera.distance = if state.focus_moon { 1.2 } else { state.base_distance() };
@@ -178,8 +182,9 @@ fn run_window(scene: &Scene, framebuffer: &mut Framebuffer) {
         d.draw_text(&format!("{}{target}", state.body.title()), 14, 12, 22, Color::RAYWHITE);
         d.draw_text(
             &format!(
-                "nubes {:.0}%   tiempo {:.1}s{}",
+                "nubes {:.0}%   parallax {}   tiempo {:.1}s{}",
                 state.params.cloud_coverage * 100.0,
+                if state.params.parallax { "on" } else { "off" },
                 state.time,
                 if paused { "  (pausa)" } else { "" }
             ),
@@ -197,7 +202,7 @@ fn run_window(scene: &Scene, framebuffer: &mut Framebuffer) {
             HUD_DIM,
         );
         d.draw_text(
-            "mouse/flechas orbitar  rueda zoom  Space pausa  L luz (Shift invierte)  [ ] nubes  M luna  R reset",
+            "mouse/flechas orbitar  rueda zoom  Space pausa  L luz (Shift invierte)  [ ] nubes  M luna  P parallax  R reset",
             14,
             FB_HEIGHT - 24,
             16,

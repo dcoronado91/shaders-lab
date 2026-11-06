@@ -7,7 +7,7 @@ $ErrorActionPreference = "Stop"
 
 $Shots = @("estrella", "rocoso", "gaseoso", "lava", "hielo", "toxico", "todos",
            "nubes", "sombras_nubes", "dia_noche", "especular", "bump_rocoso", "bump_luna",
-           "vortice", "anillos")
+           "vortice", "anillos", "parallax", "parallax_off")
 
 $Root = Split-Path -Parent $PSScriptRoot
 Set-Location $Root

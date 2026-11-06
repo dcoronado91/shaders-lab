@@ -10,6 +10,8 @@ use crate::render::Uniforms;
 
 /// Normal perturbation from the crater height field.
 pub const BUMP_STRENGTH: f32 = 0.35;
+/// Parallax depth of the height field; 0 disables the effect.
+pub const PARALLAX_SCALE: f32 = 0.6;
 /// Fraction of Worley cells that hold a crater, per size class.
 pub const CRATER_CHANCE: [f32; 2] = [0.6, 0.5];
 
@@ -34,17 +36,20 @@ fn crater_layer(q: Vec3, chance: f32, out: &mut Craters, weight: f32) {
     if hash01(w.id) > chance {
         return;
     }
-    let radius = 0.22 + 0.22 * hash01(w.id.rotate_left(5));
+    // Craters stay inside their Voronoi cell: small radii and a fade
+    // towards the cell border (F2 - F1 -> 0) avoid straight cut edges.
+    let border = smoothstep(0.0, 0.12, w.f2 - w.f1);
+    let radius = 0.14 + 0.16 * hash01(w.id.rotate_left(5));
     let d = w.f1 / radius;
     let bowl = (d * d - 1.0).min(0.0);
-    let rim = 0.35 * (-((d - 1.0) / 0.22).powi(2)).exp();
+    let rim = 0.35 * (-((d - 1.0) / 0.22).powi(2)).exp() * border;
     out.height += (bowl + rim) * weight;
     out.floor = out.floor.max(smoothstep(0.75, 0.2, d));
     out.rim = out.rim.max(rim / 0.35);
     if hash01(w.id.rotate_left(13)) > 0.8 {
         let dir = (q - w.point).normalize();
         let rays = ridged(dir * 7.0 + Vec3::splat(hash01(w.id) * 50.0), 1).powi(6);
-        let halo = (-(d - 1.0).max(0.0) * 1.2).exp() * (d > 0.85) as u8 as f32;
+        let halo = (-(d - 1.0).max(0.0) * 2.5).exp() * smoothstep(0.8, 0.95, d) * border;
         out.ejecta = out.ejecta.max(halo * (0.35 + rays));
     }
 }
@@ -62,6 +67,21 @@ pub fn height(p: Vec3) -> f32 {
 
 pub fn moon(frag: &Fragment, u: &Uniforms) -> Option<Color> {
     let s = surface(frag, u)?;
+
+    // Parallax: move the sample point along the tangent part of the view
+    // direction, proportionally to the height, so rims hide part of the
+    // crater floors when seen at grazing angles.
+    let s = if u.params.parallax {
+        let v_obj = object_dir(u, s.v);
+        let v_n = v_obj.dot(s.p).max(0.35);
+        let offset = (v_obj - s.p * v_obj.dot(s.p)) * (height(s.p) * PARALLAX_SCALE / v_n);
+        Surface {
+            p: (s.p + offset).normalize(),
+            ..s
+        }
+    } else {
+        s
+    };
     let p = s.p;
     let cr = craters(p);
     let h = cr.height + fbm(p * 2.0, 3) * 0.03 + noise(p * 40.0) * 0.004;

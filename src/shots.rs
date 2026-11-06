@@ -22,6 +22,7 @@ pub struct Shot {
     pub seconds: f32,
     pub coverage: Option<f32>,
     pub focus_moon: bool,
+    pub parallax: bool,
 }
 
 const fn body_shot(name: &'static str, body: Body) -> Shot {
@@ -39,10 +40,11 @@ const fn body_shot(name: &'static str, body: Body) -> Shot {
         seconds: 3.0,
         coverage: None,
         focus_moon: false,
+        parallax: true,
     }
 }
 
-pub const SHOTS: [Shot; 15] = [
+pub const SHOTS: [Shot; 17] = [
     Shot { time_speed: 2.5, ..body_shot("estrella", Body::Star) },
     body_shot("rocoso", Body::Rocky),
     Shot { pitch: 0.3, ..body_shot("gaseoso", Body::Gas) },
@@ -117,6 +119,23 @@ pub const SHOTS: [Shot; 15] = [
         light: Some(-1.3),
         ..body_shot("anillos", Body::Gas)
     },
+    Shot {
+        yaw: 1.25,
+        pitch: 0.05,
+        distance: Some(0.75),
+        light: Some(-0.2),
+        focus_moon: true,
+        ..body_shot("parallax", Body::Rocky)
+    },
+    Shot {
+        yaw: 1.25,
+        pitch: 0.05,
+        distance: Some(0.75),
+        light: Some(-0.2),
+        focus_moon: true,
+        parallax: false,
+        ..body_shot("parallax_off", Body::Rocky)
+    },
 ];
 
 impl Shot {
@@ -141,6 +160,7 @@ impl Shot {
             state.params.cloud_coverage = c;
         }
         state.focus_moon = self.focus_moon;
+        state.params.parallax = self.parallax;
         state
     }
 }
