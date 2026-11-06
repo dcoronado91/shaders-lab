@@ -1,8 +1,9 @@
-//! "Crono": gas giant with flowing bands and a great storm.
+//! "Crono": gas giant with flowing bands, a great storm and rings.
 
 use raylib::prelude::Color;
 
 use super::common::*;
+use super::rings;
 use crate::fragment::Fragment;
 use crate::math::Vec3;
 use crate::noise::{fbm, noise};
@@ -83,11 +84,12 @@ pub fn gas(frag: &Fragment, u: &Uniforms) -> Option<Color> {
         * smoothstep(0.07, 0.0, (lat + 0.62).abs());
     col = mix(col, OVAL, ovals);
 
-    // Soft wrap lighting and limb darkening.
+    // Soft wrap lighting, limb darkening and the rings' shadow.
     let ndl = s.n.dot(s.l);
     let diffuse = saturate((ndl + 0.2) / 1.2);
     let limb = 0.55 + 0.45 * s.n.dot(s.v).max(0.0).sqrt();
-    let mut c = col * (diffuse * limb + 0.008);
+    let ring_shadow = rings::shadow_on_planet(frag.world_pos, s.l, u);
+    let mut c = col * (diffuse * limb * ring_shadow + 0.008);
     c += HAZE * (fresnel(s.n, s.v, 4.0) * saturate(ndl + 0.3) * 0.25);
     Some(to_color(c, 1.0))
 }

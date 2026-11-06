@@ -6,7 +6,7 @@ use crate::math::{Mat4, Vec3};
 use crate::obj::Obj;
 use crate::render::{BodyInfo, DrawCall, FragmentShader, Params, Uniforms};
 use crate::shaders::common::hex;
-use crate::shaders::{atmosphere, gas, moon, rocky, star};
+use crate::shaders::{atmosphere, gas, moon, rings, rocky, star};
 use crate::vertex::Vertex;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -151,6 +151,7 @@ struct PlanetSpec {
     tilt: (f32, f32),
     glow: Option<Glow>,
     moon: bool,
+    rings: bool,
 }
 
 fn spec(body: Body) -> PlanetSpec {
@@ -168,6 +169,7 @@ fn spec(body: Body) -> PlanetSpec {
                 lit: false,
             }),
             moon: false,
+            rings: false,
         },
         Body::Rocky => PlanetSpec {
             shader: rocky::rocky,
@@ -182,6 +184,7 @@ fn spec(body: Body) -> PlanetSpec {
                 lit: true,
             }),
             moon: true,
+            rings: false,
         },
         Body::Gas => PlanetSpec {
             shader: gas::gas,
@@ -196,9 +199,15 @@ fn spec(body: Body) -> PlanetSpec {
                 lit: true,
             }),
             moon: false,
+            rings: true,
         },
     }
 }
+
+/// Ring disk: the sphere scaled to `RING_SCALE` planet radii in the ring
+/// plane and `RING_THICKNESS` across it.
+pub const RING_SCALE: f32 = 2.35;
+pub const RING_THICKNESS: f32 = 0.01;
 
 /// Moon scale and orbit, relative to its planet radius.
 pub const MOON_SCALE: f32 = 0.27;
@@ -306,6 +315,12 @@ impl Scene {
                     Vec3::splat(moon_radius * self.cover),
                 );
                 opaque.push(self.draw(base.with_model(moon_model, moon_info), moon::moon, false));
+            }
+
+            if spec.rings {
+                let (s, t) = (radius * self.cover * RING_SCALE, radius * self.cover * RING_THICKNESS);
+                let ring_model = Mat4::model(center, tilt, Vec3::new(s, t, s));
+                transparent.push((center, self.draw(base.with_model(ring_model, info), rings::rings, true)));
             }
 
             if let Some(glow) = spec.glow {
