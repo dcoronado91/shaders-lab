@@ -8,4 +8,5 @@ pub mod raster;
 pub mod render;
 pub mod scene;
 pub mod shaders;
+pub mod shots;
 pub mod vertex;

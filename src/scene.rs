@@ -64,7 +64,11 @@ impl Body {
         }
     }
 
-    fn camera_distance(self) -> f32 {
+    fn camera_pitch(self) -> f32 {
+        if self == Body::All { 0.42 } else { 0.18 }
+    }
+
+    pub fn camera_distance(self) -> f32 {
         match self {
             Body::Star => 3.6,
             Body::Rocky => 4.8,
@@ -72,7 +76,7 @@ impl Body {
             Body::Lava => 3.4,
             Body::Ice => 3.4,
             Body::Toxic => 3.4,
-            Body::All => 9.0,
+            Body::All => 15.0,
         }
     }
 }
@@ -138,7 +142,7 @@ impl SceneState {
             light_angle: body.light_angle(),
             camera: Camera {
                 yaw: 0.0,
-                pitch: 0.18,
+                pitch: body.camera_pitch(),
                 distance: body.camera_distance(),
             },
             params: Params::default(),
