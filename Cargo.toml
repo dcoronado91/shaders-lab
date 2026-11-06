@@ -14,3 +14,9 @@ panic = "abort"
 
 [profile.dev]
 opt-level = 1
+
+# raylib-sys picks its CMake configuration from the build script's own
+# debug assertions; building it as Release links the same C runtime as Rust
+# (avoids the LNK4098 MSVCRTD warning in debug builds and tests).
+[profile.dev.build-override]
+debug-assertions = false

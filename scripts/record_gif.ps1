@@ -16,6 +16,9 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# With -File, "a,b" arrives as a single string.
+$Shots = $Shots | ForEach-Object { $_ -split "," } | Where-Object { $_ }
+
 # Must match RECORD_FPS in src/main.rs.
 $Fps = 20
 
