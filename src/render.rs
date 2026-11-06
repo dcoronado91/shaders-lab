@@ -20,7 +20,7 @@ pub struct Params {
 impl Default for Params {
     fn default() -> Self {
         Params {
-            cloud_coverage: 0.5,
+            cloud_coverage: 0.42,
         }
     }
 }

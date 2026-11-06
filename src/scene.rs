@@ -5,22 +5,25 @@ use std::str::FromStr;
 use crate::math::{Mat4, Vec3};
 use crate::obj::Obj;
 use crate::render::{BodyInfo, DrawCall, FragmentShader, Params, Uniforms};
-use crate::shaders::{atmosphere, star};
+use crate::shaders::common::hex;
+use crate::shaders::{atmosphere, rocky, star};
 use crate::vertex::Vertex;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Body {
     Star,
+    Rocky,
     All,
 }
 
 impl Body {
-    pub const ALL: [Body; 2] = [Body::Star, Body::All];
+    pub const ALL: [Body; 3] = [Body::Star, Body::Rocky, Body::All];
 
     /// Name used on the command line and for evidence files.
     pub fn name(self) -> &'static str {
         match self {
             Body::Star => "estrella",
+            Body::Rocky => "rocoso",
             Body::All => "todos",
         }
     }
@@ -28,6 +31,7 @@ impl Body {
     pub fn title(self) -> &'static str {
         match self {
             Body::Star => "Solara - estrella",
+            Body::Rocky => "Eden - planeta rocoso + luna Selene",
             Body::All => "Sistema completo",
         }
     }
@@ -35,6 +39,7 @@ impl Body {
     fn camera_distance(self) -> f32 {
         match self {
             Body::Star => 3.6,
+            Body::Rocky => 4.8,
             Body::All => 9.0,
         }
     }
@@ -91,7 +96,7 @@ pub struct SceneState {
     pub params: Params,
 }
 
-pub const DEFAULT_LIGHT_ANGLE: f32 = -1.1;
+pub const DEFAULT_LIGHT_ANGLE: f32 = -1.75;
 
 impl SceneState {
     pub fn new(body: Body) -> Self {
@@ -149,11 +154,24 @@ fn spec(body: Body) -> PlanetSpec {
                 lit: false,
             }),
         },
+        Body::Rocky => PlanetSpec {
+            shader: rocky::rocky,
+            radius: 1.0,
+            spin: 0.06,
+            tilt: (0.15, 0.35),
+            glow: Some(Glow {
+                shader: atmosphere::atmosphere,
+                color: hex(0x4d9bff),
+                strength: 0.9,
+                extent: 1.12,
+                lit: true,
+            }),
+        },
     }
 }
 
 /// Bodies placed in the full-system view: (body, orbit radius, scale, phase).
-const SYSTEM: [(Body, f32, f32, f32); 1] = [(Body::Star, 0.0, 1.4, 0.0)];
+const SYSTEM: [(Body, f32, f32, f32); 2] = [(Body::Star, 0.0, 1.4, 0.0), (Body::Rocky, 4.2, 0.45, 2.2)];
 
 pub struct Scene {
     vertices: Vec<Vertex>,
@@ -182,7 +200,8 @@ impl Scene {
             body => vec![(body, Vec3::ZERO, 1.0)],
         };
 
-        let eye = state.camera.eye(Vec3::ZERO);
+        let target = Vec3::ZERO;
+        let eye = state.camera.eye(target);
         let light_pos = match state.body {
             Body::All => Vec3::ZERO,
             _ => {
@@ -194,7 +213,7 @@ impl Scene {
             model: Mat4::IDENTITY,
             model_inv: Mat4::IDENTITY,
             normal_matrix: Mat4::IDENTITY,
-            view: Mat4::look_at(eye, Vec3::ZERO, Vec3::Y),
+            view: Mat4::look_at(eye, target, Vec3::Y),
             projection: Mat4::perspective(PI / 4.0, width as f32 / height as f32, 0.05, 300.0),
             viewport: Mat4::viewport(width as f32, height as f32),
             time: state.time,
