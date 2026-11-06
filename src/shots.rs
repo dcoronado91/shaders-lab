@@ -62,8 +62,8 @@ pub const SHOTS: [Shot; 15] = [
         yaw: 0.6,
         pitch: 0.1,
         distance: Some(1.75),
-        light: Some(-1.1),
-        light_speed: 0.12,
+        light: Some(-0.75),
+        light_speed: 0.1,
         time_speed: 8.0,
         coverage: Some(0.45),
         ..body_shot("sombras_nubes", Body::Rocky)
@@ -88,8 +88,8 @@ pub const SHOTS: [Shot; 15] = [
         yaw: 0.8,
         pitch: 0.25,
         distance: Some(1.8),
-        light: Some(-1.25),
-        light_speed: 0.3,
+        light: Some(-0.3),
+        light_speed: -0.25,
         coverage: Some(0.15),
         ..body_shot("bump_rocoso", Body::Rocky)
     },
@@ -114,7 +114,7 @@ pub const SHOTS: [Shot; 15] = [
         yaw: 0.9,
         pitch: 0.55,
         distance: Some(5.6),
-        light: Some(-2.2),
+        light: Some(-1.3),
         ..body_shot("anillos", Body::Gas)
     },
 ];

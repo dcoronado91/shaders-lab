@@ -17,9 +17,9 @@ pub const BUMP_STRENGTH: f32 = 0.22;
 pub const CLOUD_SPEED: f32 = 0.045;
 /// How far the clouds float above the ground (unit sphere = 1); longer
 /// offsets throw the cloud shadows further from their clouds.
-pub const CLOUD_HEIGHT: f32 = 0.04;
+pub const CLOUD_HEIGHT: f32 = 0.06;
 /// Darkening under a fully opaque cloud.
-pub const CLOUD_SHADOW: f32 = 0.65;
+pub const CLOUD_SHADOW: f32 = 0.75;
 /// Blinn-Phong exponent of the ocean glint.
 pub const OCEAN_SHININESS: f32 = 90.0;
 
@@ -60,8 +60,8 @@ pub fn clouds(q: Vec3, coverage: f32, t: f32) -> f32 {
 
 fn city_lights(p: Vec3) -> f32 {
     let clusters = smoothstep(0.0, 0.18, fbm(p * 4.0 + Vec3::splat(20.0), 2));
-    let towns = smoothstep(0.15, 0.45, noise(p * 55.0));
-    let sparkle = smoothstep(0.3, 0.55, noise(p * 150.0));
+    let towns = smoothstep(0.25, 0.5, noise(p * 110.0));
+    let sparkle = smoothstep(0.35, 0.6, noise(p * 260.0));
     clusters * (towns + sparkle * 0.6)
 }
 
@@ -120,7 +120,7 @@ pub fn rocky(frag: &Fragment, u: &Uniforms) -> Option<Color> {
     let ndl = s.n.dot(s.l);
     let day = smoothstep(-0.12, 0.2, ndl);
     let diffuse = n.dot(s.l).max(0.0) * (1.0 - shadow);
-    let mut c = albedo * (0.012 + diffuse);
+    let mut c = albedo * (0.006 + diffuse);
     let water = (1.0 - land) * (1.0 - ice);
     let glint = blinn_phong(s.n, s.l, s.v, OCEAN_SHININESS) * 1.6 + blinn_phong(s.n, s.l, s.v, 10.0) * 0.06;
     c += GLINT * (glint * water * (1.0 - shadow));

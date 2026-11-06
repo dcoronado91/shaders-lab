@@ -131,7 +131,8 @@ pub fn bump(
 
 pub fn blinn_phong(n: Vec3, l: Vec3, v: Vec3, shininess: f32) -> f32 {
     let h = (l + v).normalize();
-    n.dot(h).max(0.0).powf(shininess) * (n.dot(l) > 0.0) as u8 as f32
+    // Fades in past the terminator instead of switching on abruptly.
+    n.dot(h).max(0.0).powf(shininess) * smoothstep(0.0, 0.15, n.dot(l))
 }
 
 pub fn fresnel(n: Vec3, v: Vec3, power: f32) -> f32 {
