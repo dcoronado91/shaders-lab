@@ -6,7 +6,7 @@ use crate::math::{Mat4, Vec3};
 use crate::obj::Obj;
 use crate::render::{BodyInfo, DrawCall, FragmentShader, Params, Uniforms};
 use crate::shaders::common::hex;
-use crate::shaders::{atmosphere, rocky, star};
+use crate::shaders::{atmosphere, moon, rocky, star};
 use crate::vertex::Vertex;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -94,6 +94,8 @@ pub struct SceneState {
     pub light_angle: f32,
     pub camera: Camera,
     pub params: Params,
+    /// Aim the camera at the moon instead of the planet.
+    pub focus_moon: bool,
 }
 
 pub const DEFAULT_LIGHT_ANGLE: f32 = -1.75;
@@ -110,6 +112,7 @@ impl SceneState {
                 distance: body.camera_distance(),
             },
             params: Params::default(),
+            focus_moon: false,
         }
     }
 
@@ -137,6 +140,7 @@ struct PlanetSpec {
     /// Axis tilt (rotation around X and Z).
     tilt: (f32, f32),
     glow: Option<Glow>,
+    moon: bool,
 }
 
 fn spec(body: Body) -> PlanetSpec {
@@ -153,6 +157,7 @@ fn spec(body: Body) -> PlanetSpec {
                 extent: 1.6,
                 lit: false,
             }),
+            moon: false,
         },
         Body::Rocky => PlanetSpec {
             shader: rocky::rocky,
@@ -166,8 +171,21 @@ fn spec(body: Body) -> PlanetSpec {
                 extent: 1.12,
                 lit: true,
             }),
+            moon: true,
         },
     }
+}
+
+/// Moon scale and orbit, relative to its planet radius.
+pub const MOON_SCALE: f32 = 0.27;
+pub const MOON_ORBIT: f32 = 2.1;
+pub const MOON_SPEED: f32 = 0.12;
+
+/// Inclined circular orbit around the planet; also returns the orbit angle.
+fn moon_center(center: Vec3, radius: f32, time: f32) -> (Vec3, f32) {
+    let a = 0.6 + time * MOON_SPEED;
+    let d = MOON_ORBIT * radius;
+    (center + Vec3::new(a.cos() * d, a.sin() * d * 0.22, a.sin() * d), a)
 }
 
 /// Bodies placed in the full-system view: (body, orbit radius, scale, phase).
@@ -200,7 +218,12 @@ impl Scene {
             body => vec![(body, Vec3::ZERO, 1.0)],
         };
 
-        let target = Vec3::ZERO;
+        let target = match placements.first() {
+            Some(&(body, center, scale)) if state.focus_moon && spec(body).moon => {
+                moon_center(center, spec(body).radius * scale, state.time).0
+            }
+            _ => Vec3::ZERO,
+        };
         let eye = state.camera.eye(target);
         let light_pos = match state.body {
             Body::All => Vec3::ZERO,
@@ -239,6 +262,23 @@ impl Scene {
             let spin = Vec3::new(tilt.x, state.time * spec.spin, tilt.z);
             let model = Mat4::model(center, spin, Vec3::splat(radius * self.cover));
             opaque.push(self.draw(base.with_model(model, info), spec.shader, false));
+
+            if spec.moon {
+                let (moon_pos, angle) = moon_center(center, radius, state.time);
+                let moon_radius = radius * MOON_SCALE;
+                let moon_info = BodyInfo {
+                    center: moon_pos,
+                    radius: moon_radius,
+                    ..BodyInfo::default()
+                };
+                // Tidally locked: the same face always looks at the planet.
+                let moon_model = Mat4::model(
+                    moon_pos,
+                    Vec3::new(0.0, -angle, 0.0),
+                    Vec3::splat(moon_radius * self.cover),
+                );
+                opaque.push(self.draw(base.with_model(moon_model, moon_info), moon::moon, false));
+            }
 
             if let Some(glow) = spec.glow {
                 info.glow = glow.color;
