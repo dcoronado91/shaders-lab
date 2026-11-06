@@ -6,7 +6,7 @@ use crate::math::{Mat4, Vec3};
 use crate::obj::Obj;
 use crate::render::{BodyInfo, DrawCall, FragmentShader, Params, Uniforms};
 use crate::shaders::common::hex;
-use crate::shaders::{atmosphere, gas, ice, lava, moon, rings, rocky, star};
+use crate::shaders::{atmosphere, gas, ice, lava, moon, rings, rocky, star, toxic};
 use crate::vertex::Vertex;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -16,16 +16,18 @@ pub enum Body {
     Gas,
     Lava,
     Ice,
+    Toxic,
     All,
 }
 
 impl Body {
-    pub const ALL: [Body; 6] = [
+    pub const ALL: [Body; 7] = [
         Body::Star,
         Body::Rocky,
         Body::Gas,
         Body::Lava,
         Body::Ice,
+        Body::Toxic,
         Body::All,
     ];
 
@@ -37,6 +39,7 @@ impl Body {
             Body::Gas => "gaseoso",
             Body::Lava => "lava",
             Body::Ice => "hielo",
+            Body::Toxic => "toxico",
             Body::All => "todos",
         }
     }
@@ -48,6 +51,7 @@ impl Body {
             Body::Gas => "Crono - gigante gaseoso con anillos",
             Body::Lava => "Ignea - planeta de lava",
             Body::Ice => "Crionica - planeta helado de cristal",
+            Body::Toxic => "Miasma - planeta toxico",
             Body::All => "Sistema completo",
         }
     }
@@ -67,6 +71,7 @@ impl Body {
             Body::Gas => 6.4,
             Body::Lava => 3.4,
             Body::Ice => 3.4,
+            Body::Toxic => 3.4,
             Body::All => 9.0,
         }
     }
@@ -246,6 +251,21 @@ fn spec(body: Body) -> PlanetSpec {
             moon: false,
             rings: false,
         },
+        Body::Toxic => PlanetSpec {
+            shader: toxic::toxic,
+            radius: 1.0,
+            spin: 0.06,
+            tilt: (0.3, 0.1),
+            glow: Some(Glow {
+                shader: atmosphere::atmosphere,
+                color: hex(0xb8f04a),
+                strength: 0.75,
+                extent: 1.13,
+                lit: true,
+            }),
+            moon: false,
+            rings: false,
+        },
     }
 }
 
@@ -267,12 +287,13 @@ fn moon_center(center: Vec3, radius: f32, time: f32) -> (Vec3, f32) {
 }
 
 /// Bodies placed in the full-system view: (body, orbit radius, scale, phase).
-const SYSTEM: [(Body, f32, f32, f32); 5] = [
+const SYSTEM: [(Body, f32, f32, f32); 6] = [
     (Body::Star, 0.0, 1.4, 0.0),
     (Body::Rocky, 4.2, 0.45, 2.2),
     (Body::Gas, 7.0, 0.6, 4.0),
     (Body::Lava, 2.4, 0.3, 1.0),
     (Body::Ice, 9.5, 0.35, 5.5),
+    (Body::Toxic, 5.6, 0.4, 3.0),
 ];
 
 pub struct Scene {
