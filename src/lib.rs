@@ -1,3 +1,4 @@
+pub mod background;
 pub mod fragment;
 pub mod framebuffer;
 pub mod math;
@@ -5,5 +6,6 @@ pub mod noise;
 pub mod obj;
 pub mod raster;
 pub mod render;
+pub mod scene;
 pub mod shaders;
 pub mod vertex;
