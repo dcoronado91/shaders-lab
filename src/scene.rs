@@ -6,7 +6,7 @@ use crate::math::{Mat4, Vec3};
 use crate::obj::Obj;
 use crate::render::{BodyInfo, DrawCall, FragmentShader, Params, Uniforms};
 use crate::shaders::common::hex;
-use crate::shaders::{atmosphere, gas, moon, rings, rocky, star};
+use crate::shaders::{atmosphere, gas, lava, moon, rings, rocky, star};
 use crate::vertex::Vertex;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -14,11 +14,18 @@ pub enum Body {
     Star,
     Rocky,
     Gas,
+    Lava,
     All,
 }
 
 impl Body {
-    pub const ALL: [Body; 4] = [Body::Star, Body::Rocky, Body::Gas, Body::All];
+    pub const ALL: [Body; 5] = [
+        Body::Star,
+        Body::Rocky,
+        Body::Gas,
+        Body::Lava,
+        Body::All,
+    ];
 
     /// Name used on the command line and for evidence files.
     pub fn name(self) -> &'static str {
@@ -26,6 +33,7 @@ impl Body {
             Body::Star => "estrella",
             Body::Rocky => "rocoso",
             Body::Gas => "gaseoso",
+            Body::Lava => "lava",
             Body::All => "todos",
         }
     }
@@ -35,6 +43,7 @@ impl Body {
             Body::Star => "Solara - estrella",
             Body::Rocky => "Eden - planeta rocoso + luna Selene",
             Body::Gas => "Crono - gigante gaseoso con anillos",
+            Body::Lava => "Ignea - planeta de lava",
             Body::All => "Sistema completo",
         }
     }
@@ -52,6 +61,7 @@ impl Body {
             Body::Star => 3.6,
             Body::Rocky => 4.8,
             Body::Gas => 6.4,
+            Body::Lava => 3.4,
             Body::All => 9.0,
         }
     }
@@ -201,6 +211,21 @@ fn spec(body: Body) -> PlanetSpec {
             moon: false,
             rings: true,
         },
+        Body::Lava => PlanetSpec {
+            shader: lava::lava,
+            radius: 1.0,
+            spin: 0.07,
+            tilt: (0.2, -0.15),
+            glow: Some(Glow {
+                shader: atmosphere::atmosphere,
+                color: hex(0xff5a1f),
+                strength: 0.6,
+                extent: 1.12,
+                lit: false,
+            }),
+            moon: false,
+            rings: false,
+        },
     }
 }
 
@@ -222,10 +247,11 @@ fn moon_center(center: Vec3, radius: f32, time: f32) -> (Vec3, f32) {
 }
 
 /// Bodies placed in the full-system view: (body, orbit radius, scale, phase).
-const SYSTEM: [(Body, f32, f32, f32); 3] = [
+const SYSTEM: [(Body, f32, f32, f32); 4] = [
     (Body::Star, 0.0, 1.4, 0.0),
     (Body::Rocky, 4.2, 0.45, 2.2),
     (Body::Gas, 7.0, 0.6, 4.0),
+    (Body::Lava, 2.4, 0.3, 1.0),
 ];
 
 pub struct Scene {
